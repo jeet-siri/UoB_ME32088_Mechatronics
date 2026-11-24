@@ -60,17 +60,17 @@ half = marker_size / 2
 marker_points = np.array([[-half, half, 0], [half, half, 0],
                           [half, -half, 0], [-half, -half, 0]], dtype=np.float32)
 
-# Select the first camera (0) that is connected to the machine
-# in Laptops should be the built-in camera
-cap = cv2.VideoCapture(0)
+# Which camera: 0 = laptop's built-in camera, 1 = USB camera (Calibration.npz was made with the USB one)
+CAMERA_INDEX = 1
+cap = cv2.VideoCapture(CAMERA_INDEX)
 if not cap.isOpened():
-    logging.error("Could not open camera 0")
+    logging.error("Could not open camera %d", CAMERA_INDEX)
     raise SystemExit(1)
-logging.info("Camera 0 opened")
+logging.info("Camera %d opened", CAMERA_INDEX)
 
-# Set the width and height of the camera to 1920x1080
-cap.set(3,1920)
-cap.set(4,1080)
+# Capture at 1280x720: the resolution Calibration.npz was made at (otherwise distances are wrong)
+cap.set(3,1280)
+cap.set(4,720)
 logging.info(
     "Camera resolution: %dx%d",
     int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),

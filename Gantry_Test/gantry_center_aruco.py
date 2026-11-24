@@ -22,7 +22,8 @@ PI_IP = "138.38.226.64"  # Pi's IP (on the Pi: hostname -I)
 PI_PORT = 50001           # must match the UDP Receive block
 TARGET_ID = None          # e.g. 35 to follow only that marker; None = the first marker seen
 SEND_PERIOD = 0.1         # s; the Pi reads one packet per 0.05 s step, so don't send faster
-ON_PX, OFF_PX = 40, 15    # only for drawing - the real thresholds are in the Simulink Relay block
+ON_PX, OFF_PX = 40, 15    # only for drawing - the real thresholds are in the Simulink model
+CAMERA_INDEX = 1          # 0 = laptop camera, 1 = USB camera on the gantry (try 2 if 1 is wrong)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -36,10 +37,10 @@ def send(visible, error_px):
 detector = aruco.ArucoDetector(aruco.getPredefinedDictionary(aruco.DICT_4X4_50),
                                aruco.DetectorParameters())
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(CAMERA_INDEX)
 if not cap.isOpened():
-    raise SystemExit("Could not open camera 0")
-# A smaller image = higher frame rate = less lag in the control loop
+    raise SystemExit(f"Could not open camera {CAMERA_INDEX}")
+# 1280x720: the resolution the USB camera's Calibration.npz was made at, and a good frame rate
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
