@@ -15,14 +15,20 @@ import time # We will use this to ensure a steady processing rate
 
 logging.basicConfig(level=logging.INFO)
 
+# Which camera to use: 0 = laptop camera, 1 = USB camera.
+# The calibration below must have been made with this same camera.
+CAMERA_INDEX = 1
+
 # Load the camera calibration values
-camera_calibration = np.load('Sample_Calibration.npz')
+# (the path is built from this script's folder, so it works whichever folder you run it from)
+import os
+camera_calibration = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Calibration.npz'))
 CM=camera_calibration['CM'] #camera matrix
 dist_coef=camera_calibration['dist_coef']# distortion coefficients from the camera
-logging.info("Loaded camera calibration from Sample_Calibration.npz")
+logging.info("Loaded camera calibration from Calibration.npz")
 
 # Define the ArUco dictionary and parameters
-marker_size = 40 # the real size of the printed marker in mm
+marker_size = 100 # the real size of the printed marker in mm (10 cm)
 aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
 parameters = aruco.DetectorParameters()
 detector = aruco.ArucoDetector(aruco_dict, parameters)
@@ -43,11 +49,15 @@ cv2.namedWindow("Gray", cv2.WINDOW_AUTOSIZE)
 cv2.moveWindow("Gray", 640, 100)
 cv2.moveWindow("Frame", 0, 100)
 # Start capturing video
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(CAMERA_INDEX)
 if not cap.isOpened():
-    logging.error("Could not open camera 0")
+    logging.error("Could not open camera %d", CAMERA_INDEX)
     raise SystemExit(1)
-logging.info("Camera 0 opened")
+logging.info("Camera %d opened", CAMERA_INDEX)
+# Capture at 1280x720, the resolution Calibration.npz was made with
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+logging.info("Camera resolution: %dx%d", int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
 # Set the starting time
 start_time = time.time()
@@ -58,7 +68,7 @@ while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
     if not ret:
-        logging.error("Could not read a frame from camera 0; exiting")
+        logging.error("Could not read a frame from camera %d; exiting", CAMERA_INDEX)
         break
 
     # Convert frame to grayscale
@@ -85,8 +95,12 @@ while True:
         for i in range(len(corners)):
             ok, rvec, tvec = cv2.solvePnP(marker_points, corners[i], CM, dist_coef, flags=cv2.SOLVEPNP_IPPE_SQUARE)
             if ok:
-                # Draw axis for each marker (axis length 10 mm)
-                frame = cv2.drawFrameAxes(frame, CM, dist_coef, rvec, tvec, 10)
+                # Draw axis for each marker. The axes start at the marker centre, so make them
+                # longer than half the marker (here 1.5x the marker size) or they stay hidden
+                # inside the marker. Red = x, green = y, blue = z (pointing out of the marker)
+                frame = cv2.drawFrameAxes(frame, CM, dist_coef, rvec, tvec, marker_size * 1.5, 4)
+            else:
+                logging.warning("Pose estimation failed for marker %d", int(ids.flatten()[i]))
 
     # Add the frame rate to the image
     cv2.putText(frame, f"CAMERA FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
