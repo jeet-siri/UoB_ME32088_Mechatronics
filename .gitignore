@@ -9,3 +9,8 @@
 /CV_Templates/.ipynb_checkpoints
 
 __pycache__/
+
+# Simulink autosave / build output
+*.autosave
+slprj/
+*.slxc

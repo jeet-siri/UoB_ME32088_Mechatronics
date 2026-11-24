@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 FLIP_CODE = 1
 
 # ArUco step 11: UDP settings for the Raspberry Pi (Simulink "UDP Receive" block)
-PI_IP = "138.38.227.237"  # your Pi's IP (on the Pi: hostname -I)
+PI_IP = "138.38.226.64"  # your Pi's IP (on the Pi: hostname -I)
 PI_PORT = 50001           # must match the UDP Receive block's Local IP port
 STEPPER_ID = 35           # this marker turns the stepper motor
 LASER_ID = 49             # this marker turns the laser on
