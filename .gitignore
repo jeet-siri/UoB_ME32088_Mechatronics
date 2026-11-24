@@ -14,3 +14,6 @@ __pycache__/
 *.autosave
 slprj/
 *.slxc
+
+# Simulink build scripts are kept out of the repo
+build_*.m
