@@ -57,7 +57,13 @@ class TargetSelector:
     update({id: (u, v)}, cx, cy, now) -> (visible, error_px, status)
     """
 
-    def __init__(self):
+    def __init__(self, priority=(), rank=None):
+        # priority: marker ids to shoot first, in this order (e.g. [49, 35]). Markers not in the
+        # list come after them, closest first. Empty = closest first for every marker.
+        # rank: optional function id -> number (lower = sooner) that replaces the priority list,
+        # e.g. for colour circles where several targets share a colour.
+        self.priority = list(priority)
+        self.rank = rank
         self.shot_ids = set()
         self.forget()
 
@@ -115,7 +121,10 @@ class TargetSelector:
             candidates = [i for i in confirmed if i not in self.shot_ids]
             if not candidates:
                 return self._stop("DONE" if confirmed else "NO TARGET")
-            self.locked_id = min(candidates, key=lambda i: (abs(confirmed[i][0] - cx),
+            rank = self.rank or (lambda i: self.priority.index(i) if i in self.priority
+                                 else len(self.priority))
+            self.locked_id = min(candidates, key=lambda i: (rank(i),
+                                                            abs(confirmed[i][0] - cx),
                                                             abs(confirmed[i][1] - cy)))
             self.locked_error = int(round(confirmed[self.locked_id][0] - cx))
             self.centred_since = None
