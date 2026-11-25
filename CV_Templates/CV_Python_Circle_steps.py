@@ -16,6 +16,8 @@ Message sent to the Pi:
 
 Use the trackbars in the "mask" window to tune the colour, press q to quit
 (the final colour values are printed so you can paste them into HSV_LOW/HSV_HIGH).
+
+The laser servo calibration is in the separate script Servo_Calibration.py.
 """
 
 import os
@@ -54,7 +56,10 @@ cx, cy = CM[0, 2], CM[1, 2]
 # ---------------------------------------------------------------------------
 EXPOSURE = -6
 GAIN = 0
-WB_TEMPERATURE = 4500
+WB_TEMPERATURE = 4500       # only used when AUTO_WHITE_BALANCE is False
+# CHANGED: same as the multi-colour script - auto white balance on (the locked
+# 4500 K gave a purple tint), set False to lock it at WB_TEMPERATURE
+AUTO_WHITE_BALANCE = True
 
 # ---------------------------------------------------------------------------
 # CHANGED (replaces Step 3 ArUco dictionary/detector and Step 7 marker_points):
@@ -71,8 +76,9 @@ USE_COLOUR = True
 # HSV colour range of the target. OpenCV hue goes 0-179.
 # Fluorescent green is roughly H 35-85. Tune with the trackbars.
 # (Red/pink wraps around hue 0/179, so for red pick a range on one side only.)
-HSV_LOW = (20, 100, 100)      # (H, S, V) minimum - V minimum ignores the dark floor
-HSV_HIGH = (35, 255, 255)   # (H, S, V) maximum
+# CHANGED (servo): yellow values tuned in the multi-colour script (colours.json)
+HSV_LOW = (18, 40, 150)     # (H, S, V) minimum - V minimum ignores the dark floor
+HSV_HIGH = (30, 255, 255)   # (H, S, V) maximum
 
 MIN_AREA = 300              # ignore blobs smaller than this (pixels)
 MIN_CIRCULARITY = 0.75      # blob area / fitted ellipse area (1.0 = perfect ellipse)
@@ -194,8 +200,11 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, CALIBRATION_RESOLUTION[0])
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CALIBRATION_RESOLUTION[1])
 cap.set(cv2.CAP_PROP_EXPOSURE, EXPOSURE)
 cap.set(cv2.CAP_PROP_GAIN, GAIN)
-cap.set(cv2.CAP_PROP_AUTO_WB, 0)
-cap.set(cv2.CAP_PROP_WB_TEMPERATURE, WB_TEMPERATURE)
+if AUTO_WHITE_BALANCE:
+    cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+else:
+    cap.set(cv2.CAP_PROP_AUTO_WB, 0)
+    cap.set(cv2.CAP_PROP_WB_TEMPERATURE, WB_TEMPERATURE)
 actual_resolution = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                      int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 logging.info("Camera %d opened at %dx%d", CAMERA_INDEX, *actual_resolution)
